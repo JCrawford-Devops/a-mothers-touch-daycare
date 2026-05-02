@@ -1,8 +1,6 @@
 import { useMemo, useState } from "react";
-HEAD
-
 import jsPDF from "jspdf";
-e84adef (Update daycare UI and add report exports)
+
 type Child = {
   id: string;
   firstName: string;
