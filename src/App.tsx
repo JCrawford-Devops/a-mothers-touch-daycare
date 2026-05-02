@@ -535,8 +535,8 @@ style={{
           <div style={cardStyle()}>
             <div style={{ fontWeight: 900, marginBottom: 10 }}>Totals (local demo)</div>
    <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-  <button style={buttonStyle("primary")} onClick={exportAttendanceReport}>
-    Download CSV
+  <button style={buttonStyle("primary")} onClick={exportAttendancePDF}>
+    Download PDF
   </button>
 
   <button style={buttonStyle("outline")} onClick={exportAttendancePDF}>
