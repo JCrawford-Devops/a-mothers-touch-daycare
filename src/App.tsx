@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
+HEAD
 
+import jsPDF from "jspdf";
+e84adef (Update daycare UI and add report exports)
 type Child = {
   id: string;
   firstName: string;
@@ -60,23 +63,26 @@ function pillStyle(active: boolean) {
 
 function buttonStyle(kind: "primary" | "outline" | "danger" = "primary") {
   const base = {
-    padding: "10px 12px",
-    borderRadius: 12,
-    fontWeight: 700 as const,
-    cursor: "pointer",
-    border: "1px solid #2a2a2a"
-  };
+  padding: "12px 18px",
+  minWidth: 92,
+  whiteSpace: "nowrap" as const,
+  borderRadius: 12,
+  fontWeight: 700 as const,
+  cursor: "pointer",
+  border: "1px solid #2a2a2a"
+};
   if (kind === "primary") return { ...base, background: "#fff", color: "#111" };
-  if (kind === "danger") return { ...base, background: "#ff3b30", color: "#fff", border: "1px solid #ff3b30" };
-  return { ...base, background: "transparent", color: "#fff" };
+  if (kind === "danger") return { ...base, background: "#ff3b30", color: "#991b1b", border: "1px solid #ff3b30" };
+  return { ...base, background: "#ffffff", color: "#111827" };
 }
 
 function cardStyle() {
   return {
-    border: "1px solid #2a2a2a",
-    borderRadius: 16,
-    background: "#101010",
-    padding: 14
+    borderRadius: 22,
+    background: "rgba(255,255,255,0.85)",
+    backdropFilter: "blur(6px)",
+    padding: 16,
+    boxShadow: "0 20px 60px rgba(0,0,0,0.08)"
   };
 }
 
@@ -86,10 +92,11 @@ function rowStyle() {
     gap: 12,
     alignItems: "center",
     justifyContent: "space-between",
-    border: "1px solid #2a2a2a",
-    borderRadius: 14,
-    padding: 12,
-    background: "#0b0b0b"
+    border: "1px solid #e5e7eb",
+    borderRadius: 18,
+    padding: 14,
+    background: "#ffffff",
+    boxShadow: "0 8px 24px rgba(31, 41, 55, 0.08)"
   };
 }
 
@@ -98,9 +105,9 @@ function badge(active: boolean) {
     fontSize: 12,
     padding: "6px 10px",
     borderRadius: 999,
-    border: "1px solid #2a2a2a",
-    background: active ? "#fff" : "#1e1e1e",
-    color: active ? "#111" : "#fff",
+    border: "1px solid #e2e8f0",
+    background: active ? "#dcfce7" : "#f1f5f9",
+    color: active ? "#166534" : "#334155",
     fontWeight: 800 as const
   };
 }
@@ -141,7 +148,7 @@ function inputStyle() {
 }
 
 function smallMuted() {
-  return { fontSize: 12, color: "#a7a7a7" };
+  return { fontSize: 12, color: "#64748b" };
 }
 
 const STORAGE_KEY = "mt_demo_state_v1";
@@ -173,7 +180,29 @@ function appendNote(current: string, add: string) {
   if (lc.includes(la)) return c;
   return `${c} • ${a}`;
 }
+function downloadCSV(filename: string, rows: string[][]) {
+  const csv = rows
+    .map((row) =>
+      row
+        .map((cell) => {
+          const value = String(cell ?? "");
+          const escaped = value.replaceAll('"', '""');
+          return /[",\n]/.test(escaped) ? `"${escaped}"` : escaped;
+        })
+        .join(",")
+    )
+    .join("\n");
 
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
 export default function App() {
   const dateKey = useMemo(() => todayKey(), []);
   const seeded = useMemo(() => loadState(), []);
@@ -334,15 +363,72 @@ export default function App() {
       })
       .sort((a, b) => b.minutes - a.minutes);
   }, [attendance, kids]);
+function exportAttendancePDF() {
+  const doc = new jsPDF();
+
+  doc.setFontSize(18);
+  doc.text("Little Sprouts Daycare Attendance Report", 14, 20);
+
+  doc.setFontSize(10);
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+
+  let y = 42;
+
+  doc.setFontSize(12);
+  doc.text("Child", 14, y);
+  doc.text("Days", 90, y);
+  doc.text("Minutes", 120, y);
+  doc.text("Hours", 160, y);
+
+  y += 8;
+
+  reportRows.forEach((r) => {
+    doc.text(r.name, 14, y);
+    doc.text(String(r.days), 90, y);
+    doc.text(String(r.minutes), 120, y);
+    doc.text((r.minutes / 60).toFixed(2), 160, y);
+    y += 8;
+  });
+
+  doc.save("attendance-report.pdf");
+}
 
   return (
-    <div style={{ minHeight: "100vh", background: "#070707", color: "#fff", padding: 16 }}>
+    <div
+style={{
+  minHeight: "100vh",
+  backgroundImage:
+  "linear-gradient(rgba(255,255,255,0.45), rgba(255,255,255,0.45)), url('/a-mothers-touch-daycare/daycare-bg.png')",
+  backgroundColor: "transparent",
+  backgroundSize: "cover",
+  backgroundPosition: "center top",
+  backgroundRepeat: "no-repeat",
+  backgroundAttachment: "fixed",
+  color: "#1f2937",
+  padding: 16
+}}
+>
       <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
         {/* Top */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 900 }}>Mother’s Touch</div>
-            <div style={smallMuted()}>{tab === "TODAY" ? `Today • ${dateKey}` : tab === "CHILDREN" ? "Children roster" : "Reports (local demo)"}</div>
+  <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: 0.5 }}>
+    Little Sprouts Daycare
+  </div>
+  <div
+  style={{
+    display: "inline-block",
+    fontSize: 12,
+    color: "#475569",
+    background: "rgba(255,255,255,0.7)",
+    padding: "4px 8px",
+    borderRadius: 999,
+    marginTop: 4,
+    fontWeight: 700
+  }}
+>
+  Daily attendance & care tracking
+</div>{tab === "TODAY" ? `Today • ${dateKey}` : tab === "CHILDREN" ? "Children roster" : "Reports (local demo)"}</div>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
             <button style={pillStyle(tab === "TODAY")} onClick={() => setTab("TODAY")}>Today</button>
@@ -450,6 +536,15 @@ export default function App() {
         {tab === "REPORTS" && (
           <div style={cardStyle()}>
             <div style={{ fontWeight: 900, marginBottom: 10 }}>Totals (local demo)</div>
+   <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+  <button style={buttonStyle("primary")} onClick={exportAttendanceReport}>
+    Download CSV
+  </button>
+
+  <button style={buttonStyle("outline")} onClick={exportAttendancePDF}>
+    Download PDF
+  </button>
+</div>
             <div style={{ ...smallMuted(), marginBottom: 10 }}>
               This aggregates what you’ve done on this device (stored in localStorage).
             </div>
@@ -590,7 +685,6 @@ export default function App() {
         )}
 
       </div>
-    </div>
   );
 }
 
