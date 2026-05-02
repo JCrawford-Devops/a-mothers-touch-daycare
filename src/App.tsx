@@ -178,29 +178,7 @@ function appendNote(current: string, add: string) {
   if (lc.includes(la)) return c;
   return `${c} • ${a}`;
 }
-function downloadCSV(filename: string, rows: string[][]) {
-  const csv = rows
-    .map((row) =>
-      row
-        .map((cell) => {
-          const value = String(cell ?? "");
-          const escaped = value.replaceAll('"', '""');
-          return /[",\n]/.test(escaped) ? `"${escaped}"` : escaped;
-        })
-        .join(",")
-    )
-    .join("\n");
 
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-
-  URL.revokeObjectURL(url);
-}
 export default function App() {
   const dateKey = useMemo(() => todayKey(), []);
   const seeded = useMemo(() => loadState(), []);
@@ -535,10 +513,6 @@ style={{
           <div style={cardStyle()}>
             <div style={{ fontWeight: 900, marginBottom: 10 }}>Totals (local demo)</div>
    <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-  <button style={buttonStyle("primary")} onClick={exportAttendancePDF}>
-    Download PDF
-  </button>
-
   <button style={buttonStyle("outline")} onClick={exportAttendancePDF}>
     Download PDF
   </button>
